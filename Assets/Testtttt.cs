@@ -7,12 +7,13 @@ public class Testtttt : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        Transform tf = transform;
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
+
 }
