@@ -8,6 +8,7 @@ public class Testtttt : MonoBehaviour
     void Start()
     {
         Transform tf = transform;
+        Rigidbody rb = new Rigidbody();
     }
 
     // Update is called once per frame
