@@ -79,6 +79,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: b297077dae62c1944ba14cad801cddf5, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _TextureSample5:
+        m_Texture: {fileID: 2800000, guid: 7b120c3c3229f1245b47281ba7c9b80b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _texcoord:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -109,10 +113,11 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _EnvironmentReflections: 1
-    - _Float0: -3.7
+    - _Float0: 9
     - _Float1: -1
     - _Float2: 0.31
     - _Float3: 0.92
+    - _Float4: 0.1753299
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
@@ -125,6 +130,7 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _Speed: 0
+    - _Speed1: 1
     - _SrcBlend: 1
     - _Surface: 0
     - _TessEdgeLength: 16
@@ -155,6 +161,7 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _UVOffset: {r: 0, g: 0.3, b: 0, a: 0}
     - _UVOffsetSpd: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _UVOffsetSpd1: {r: 0.5, g: 0.5, b: 0, a: 0}
   m_BuildTextureStacks: []
 --- !u!114 &4433298978907841562
 MonoBehaviour:
