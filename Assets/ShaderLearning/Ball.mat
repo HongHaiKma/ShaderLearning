@@ -145,18 +145,18 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _EnvironmentReflections: 1
-    - _Float0: 3
-    - _Float1: -1
-    - _Float10: 0.34
-    - _Float11: 3.9
-    - _Float2: 2
-    - _Float3: 1
-    - _Float4: 0.1753299
-    - _Float5: 1
-    - _Float6: 1
-    - _Float7: 0.2
+    - _Float0: 1.4
+    - _Float1: 1.4
+    - _Float10: 0
+    - _Float11: 0
+    - _Float2: 0
+    - _Float3: 0
+    - _Float4: 0
+    - _Float5: 0
+    - _Float6: 0
+    - _Float7: 0
     - _Float8: 0
-    - _Float9: 1
+    - _Float9: 0
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
@@ -168,7 +168,7 @@ Material:
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
-    - _Speed: 1
+    - _Speed: 0
     - _Speed1: 1
     - _SrcBlend: 1
     - _Surface: 0
@@ -199,9 +199,9 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _UVOffset: {r: 0, g: 0.3, b: 0, a: 0}
-    - _UVOffsetSpd: {r: 0, g: 0.5, b: 0, a: 0}
+    - _UVOffsetSpd: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _UVOffsetSpd1: {r: 0.5, g: 0.5, b: 0, a: 0}
-    - _Vector0: {r: 0, g: 0.5, b: 0, a: 0}
+    - _Vector0: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Vector1: {r: 0.34, g: 0.34, b: 0, a: 0}
     - _Vector2: {r: 0.66, g: 0.66, b: 0, a: 0}
     - _Vector3: {r: 0, g: 0, b: 0, a: 0}

@@ -130,6 +130,7 @@ namespace AmplifyShaderEditor
 		private List<PropertyDataCollector> m_aboveUsePassesList;
 		private List<PropertyDataCollector> m_belowUsePassesList;
 
+		private bool m_surfaceCustomShadowCaster = false;
 		private List<InputCoordsCollector> m_customShadowCoordsList;
 		private List<int> m_packSlotsList;
 		private string m_customAppDataItems;
@@ -163,6 +164,17 @@ namespace AmplifyShaderEditor
 		private Dictionary<string, InputCoordsCollector> m_customShadowCoordsDict;
 
 		private TextureChannelUsage[] m_requireTextureProperty = { TextureChannelUsage.Not_Used, TextureChannelUsage.Not_Used, TextureChannelUsage.Not_Used, TextureChannelUsage.Not_Used };
+		private WirePortDataType[] m_textureChannelSize =
+		{
+			WirePortDataType.FLOAT2,
+			WirePortDataType.FLOAT2,
+			WirePortDataType.FLOAT2,
+			WirePortDataType.FLOAT2,
+			WirePortDataType.FLOAT2,
+			WirePortDataType.FLOAT2,
+			WirePortDataType.FLOAT2,
+			WirePortDataType.FLOAT2
+		};
 
 		private bool m_dirtyAppData;
 		private bool m_dirtyInputs;
@@ -350,6 +362,27 @@ namespace AmplifyShaderEditor
 			m_templateDataCollector = new TemplateDataCollector();
 		}
 
+		public void CopyTextureChannelSizeFrom( ref MasterNodeDataCollector dataCollector )
+		{
+			for( int i = 0 ; i < m_textureChannelSize.Length ; i++ )
+			{
+				SetTextureChannelSize( i , dataCollector.GetMaxTextureChannelSize( i ) );
+			}
+		}
+
+		public void SetTextureChannelSize( int channelIdx , WirePortDataType size )
+		{
+			if( size > m_textureChannelSize[ channelIdx ] )
+			{
+				m_textureChannelSize[ channelIdx ] = size;
+			}
+		}
+
+		public WirePortDataType GetMaxTextureChannelSize( int channelIdx )
+		{
+			return m_textureChannelSize[ channelIdx ];
+		}
+
 		public void SetChannelUsage( int channelId, TextureChannelUsage usage )
 		{
 			if( channelId > -1 && channelId < 4 )
@@ -363,7 +396,7 @@ namespace AmplifyShaderEditor
 
 			return TextureChannelUsage.Not_Used;
 		}
-		public string SurfaceVertexStructure { get { return ( m_dirtyAppData ? Constants.CustomAppDataFullName : Constants.AppDataFullName ); } }
+
 		public void OpenPerVertexHeader( bool includeCustomData )
 		{
 			string appData = "inout " + ( m_dirtyAppData ? Constants.CustomAppDataFullName : Constants.AppDataFullName ) + " ";
@@ -913,6 +946,13 @@ namespace AmplifyShaderEditor
 				m_dirtyUniforms = true;
 			}
 		}
+		public void AddFaceMacros()
+		{
+			for( int i = 0 ; i < Constants.FaceMacros.Length; i++ )
+			{
+				AddToDirectives( Constants.FaceMacros[ i ] );
+			}
+		}
 
 		public void AddASEMacros()
 		{
@@ -1124,6 +1164,11 @@ namespace AmplifyShaderEditor
 		//	}
 		//}
 
+		public bool ContainsPragma( string value )
+		{
+			return m_pragmasDict.ContainsKey( value );
+		}
+
 		public void AddToPragmas( int nodeId, string value )
 		{
 			if( string.IsNullOrEmpty( value ) )
@@ -1137,7 +1182,13 @@ namespace AmplifyShaderEditor
 
 			if( !m_pragmasDict.ContainsKey( value ) )
 			{
-				m_pragmasDict.Add( value, new PropertyDataCollector( nodeId, "#pragma " + value ) );
+				string finalValue = "#pragma " + value;
+				PropertyDataCollector dataCollector = new PropertyDataCollector( nodeId , finalValue );
+
+				//Adding both versions to dict so check can take both into account
+				m_pragmasDict.Add( value, dataCollector );
+				m_pragmasDict.Add( finalValue , dataCollector );
+
 				m_pragmasList.Add( m_pragmasDict[ value ] );
 				m_pragmas += "\t\t#pragma " + value + "\n";
 				m_dirtyPragmas = true;
@@ -1146,6 +1197,11 @@ namespace AmplifyShaderEditor
 			{
 				if( m_showDebugMessages ) UIUtils.ShowMessage( "AddToPragmas:Attempting to add duplicate " + value, MessageSeverity.Warning );
 			}
+		}
+
+		public bool ContainsDefine( string value )
+		{
+			return m_definesDict.ContainsKey( value );
 		}
 
 		public void AddToDefines( int nodeId, string value, bool define = true )
@@ -1162,7 +1218,12 @@ namespace AmplifyShaderEditor
 			if( !m_definesDict.ContainsKey( value ) )
 			{
 				string defineValue = ( define ? "#define " : "#undef " ) + value;
-				m_definesDict.Add( value, new PropertyDataCollector( nodeId, defineValue ) );
+				PropertyDataCollector dataCollector = new PropertyDataCollector( nodeId , defineValue );
+
+				//Adding both versions to dict so check can take both into account
+				m_definesDict.Add( value, dataCollector );
+				m_definesDict.Add( defineValue , dataCollector );
+
 				m_definesList.Add( m_definesDict[ value ] );
 				m_defines += "\t\t" + defineValue + "\n";
 				m_dirtyDefines = true;
@@ -1204,7 +1265,7 @@ namespace AmplifyShaderEditor
 				return false;
 
 			string value = UIUtils.PrecisionWirePortToCgType( precisionType, type ) + " " + varName + " = " + varValue + ";";
-			return AddToLocalVariables( nodeId, value );
+			return AddToFragmentLocalVariables( nodeId, value );
 		}
 
 		public bool AddToLocalVariables( MasterNodePortCategory category, int nodeId, string value, bool ignoreDuplicates = false )
@@ -1222,7 +1283,7 @@ namespace AmplifyShaderEditor
 				case MasterNodePortCategory.Fragment:
 				case MasterNodePortCategory.Debug:
 				{
-					return AddToLocalVariables( nodeId, value, ignoreDuplicates );
+					return AddToFragmentLocalVariables( nodeId, value, ignoreDuplicates );
 				}
 			}
 
@@ -1324,7 +1385,7 @@ namespace AmplifyShaderEditor
 				case MasterNodePortCategory.Fragment:
 				case MasterNodePortCategory.Debug:
 				{
-					return AddToLocalVariables( nodeId, value, ignoreDuplicates );
+					return AddToFragmentLocalVariables( nodeId, value, ignoreDuplicates );
 				}
 			}
 
@@ -1372,7 +1433,7 @@ namespace AmplifyShaderEditor
 			}
 			else
 			{
-				AddToLocalVariables( 0, IOUtils.CreateCodeComments( forceForwardSlash, comments ) );
+				AddToFragmentLocalVariables( 0, IOUtils.CreateCodeComments( forceForwardSlash, comments ) );
 			}
 		}
 
@@ -1401,7 +1462,7 @@ namespace AmplifyShaderEditor
 			return false;
 		}
 
-		public bool AddToLocalVariables( int nodeId, string value, bool ignoreDuplicates = false )
+		public bool AddToFragmentLocalVariables( int nodeId, string value, bool ignoreDuplicates = false )
 		{
 			if( string.IsNullOrEmpty( value ) )
 				return false;
@@ -1746,8 +1807,14 @@ namespace AmplifyShaderEditor
 			m_customAppDataItems += "\t\t\t" + value + "\n";
 			m_dirtyAppData = true;
 		}
-		public string CustomAppDataName { get { return m_dirtyAppData ? Constants.CustomAppDataFullName : Constants.AppDataFullName; } }
 
+		public void ForceCustomAppDataUsage()
+		{
+			m_dirtyAppData = true;
+		}
+
+		//public string CustomAppDataName { get { return m_dirtyAppData ? Constants.CustomAppDataFullName : Constants.AppDataFullName; } }
+		public string SurfaceVertexStructure { get { return ( m_dirtyAppData ? Constants.CustomAppDataFullName : Constants.AppDataFullName ); } }
 		public string CustomAppData
 		{
 			get
@@ -2220,6 +2287,13 @@ namespace AmplifyShaderEditor
 			}
 		}
 
+		public bool SurfaceCustomShadowCaster
+		{
+			get { return m_surfaceCustomShadowCaster; }
+			set { m_surfaceCustomShadowCaster = value; }
+		}
+
+		public bool CustomOutline { get { return UsingCustomOutlineColor || UsingCustomOutlineWidth || UsingCustomOutlineAlpha; } }
 		public List<PropertyDataCollector> InputList { get { return m_inputList; } }
 		public List<PropertyDataCollector> CustomInputList { get { return m_customInputList; } }
 		public List<PropertyDataCollector> PropertiesList { get { return m_propertiesList; } }

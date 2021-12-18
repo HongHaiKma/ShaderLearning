@@ -750,14 +750,14 @@ namespace AmplifyShaderEditor
 				RegisterProperty( ref dataCollector );
 				if( m_autoRegister && m_containerGraph.ParentWindow.OutsideGraph.SamplingMacros )
 				{
-					GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, PropertyName );
+					GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, PropertyName , m_variableMode );
 				}
 			}
 		}
 
 		public string GenerateSamplerState( ref MasterNodeDataCollector dataCollector )
 		{
-			return GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, PropertyName );
+			return GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, PropertyName , m_variableMode );
 		}
 
 		public virtual string GenerateSamplerPropertyName( int outputId, ref MasterNodeDataCollector dataCollector )
@@ -766,7 +766,7 @@ namespace AmplifyShaderEditor
 
 			if( outputId > 0 || m_forceSamplingMacrosGen )
 			{
-				generatedSamplerState = GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, PropertyName );
+				generatedSamplerState = GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, PropertyName , m_variableMode );
 			}
 
 			if( outputId > 0 )
@@ -1044,14 +1044,22 @@ namespace AmplifyShaderEditor
 			}
 
 			//TODO: this is a hack and needs to be properly fixed
+#if UNITY_5_6_OR_NEWER
 			if( PropertyName == "_CameraDepthTexture" )
 			{
-				m_excludeUniform = true;
-				dataType = "UNITY_DECLARE_DEPTH_TEXTURE(";
-				dataName = m_propertyName + " )";
-				return true;
+				if( m_containerGraph.ParentWindow.OutsideGraph.IsSRP )
+				{
+					UIUtils.ShowMessage( "Use Sampling Macros flag on master node properties is required to be turned on in order to properly declare _CameraDepthTexture over an SRP shader!" , MessageSeverity.Warning );
+				}
+				else
+				{
+					m_excludeUniform = true;
+					dataType = "UNITY_DECLARE_DEPTH_TEXTURE(";
+					dataName = m_propertyName + " )";
+					return true;
+				}
 			}
-
+#endif
 			dataType = UIUtils.TextureTypeToCgType( m_currentType );
 			dataName = m_propertyName;
 			return true;

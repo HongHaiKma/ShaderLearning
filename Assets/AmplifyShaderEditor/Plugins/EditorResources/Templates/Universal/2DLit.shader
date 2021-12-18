@@ -25,6 +25,10 @@ Shader /*ase_name*/ "Hidden/Universal/Experimental/2D Lit" /*end*/
 		Cull Off
 		HLSLINCLUDE
 		#pragma target 2.0
+		
+		#pragma prefer_hlslcc gles
+		#pragma exclude_renderers d3d11_9x
+
 		ENDHLSL
 
 		/*ase_pass*/
@@ -41,8 +45,6 @@ Shader /*ase_name*/ "Hidden/Universal/Experimental/2D Lit" /*end*/
 			/*ase_stencil*/
 
 			HLSLPROGRAM
-			#pragma prefer_hlslcc gles
-			#pragma exclude_renderers d3d11_9x
 
 			#pragma vertex vert
 			#pragma fragment frag
@@ -151,7 +153,7 @@ Shader /*ase_name*/ "Hidden/Universal/Experimental/2D Lit" /*end*/
 
 				/*ase_frag_code:IN=VertexOutput*/
 				float4 Color = /*ase_frag_out:Color;Float4;1;-1;_Color*/float4( 1, 1, 1, 1 )/*end*/;
-				float Mask = /*ase_frag_out:Mask;Float;2;-1;_Mask*/1/*end*/;
+				float4 Mask = /*ase_frag_out:Mask;Float4;2;-1;_Mask*/float4(1,1,1,1)/*end*/;
 				float3 Normal = /*ase_frag_out:Normal;Float3;3;-1;_Normal*/float3( 0, 0, 1 )/*end*/;
 
 				#if ETC1_EXTERNAL_ALPHA
@@ -160,8 +162,15 @@ Shader /*ase_name*/ "Hidden/Universal/Experimental/2D Lit" /*end*/
 				#endif
 				
 				Color *= IN.color;
-
+			#if ASE_SRP_VERSION >= 120000
+				SurfaceData2D surfaceData;
+				InitializeSurfaceData(Color.rgb, Color.a, Mask, surfaceData);
+				InputData2D inputData;
+				InitializeInputData(IN.texCoord0.xy, half2(IN.screenPosition.xy / IN.screenPosition.w), inputData);
+				return CombinedShapeLightShared(surfaceData, inputData);
+			#else
 				return CombinedShapeLightShared( Color, Mask, IN.screenPosition.xy / IN.screenPosition.w );
+			#endif
 			}
 
 			ENDHLSL
@@ -182,8 +191,6 @@ Shader /*ase_name*/ "Hidden/Universal/Experimental/2D Lit" /*end*/
 			/*ase_stencil*/
 
 			HLSLPROGRAM
-			#pragma prefer_hlslcc gles
-			#pragma exclude_renderers d3d11_9x
 
 			#pragma vertex vert
 			#pragma fragment frag
@@ -295,8 +302,6 @@ Shader /*ase_name*/ "Hidden/Universal/Experimental/2D Lit" /*end*/
 			/*ase_stencil*/
 
 			HLSLPROGRAM
-			#pragma prefer_hlslcc gles
-			#pragma exclude_renderers d3d11_9x
 
 			#pragma vertex vert
 			#pragma fragment frag
@@ -395,6 +400,6 @@ Shader /*ase_name*/ "Hidden/Universal/Experimental/2D Lit" /*end*/
 		}
 		/*ase_pass_end*/
 	}
-	CustomEditor "UnityEditor.ShaderGraph.PBRMasterGUI"
+	CustomEditor "ASEMaterialInspector"
 	FallBack "Hidden/InternalErrorShader"
 }

@@ -994,7 +994,7 @@ namespace AmplifyShaderEditor
 			string generatedSamplerState = PropertyName;
 			if( m_forceSamplingMacrosGen )
 			{
-				generatedSamplerState = GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, PropertyName );
+				generatedSamplerState = GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, PropertyName, m_variableMode );
 			}
 
 			if( outputId > 0 )
@@ -1072,7 +1072,7 @@ namespace AmplifyShaderEditor
 			return sampler;
 		}
 
-		public string SampleTexture( ref MasterNodeDataCollector dataCollector, bool ignoreLocalVar, string portProperty, MipType currMipMode, string propertyName )
+		public string SampleTexture( ref MasterNodeDataCollector dataCollector, bool ignoreLocalVar, string portProperty, MipType currMipMode, string propertyName , VariableMode varMode )
 		{
 			string samplerValue = string.Empty;
 			string uvCoords = GetUVCoords( ref dataCollector, ignoreLocalVar, portProperty );
@@ -1116,7 +1116,7 @@ namespace AmplifyShaderEditor
 						if( samplerNode.IsConnected )
 						{
 							string property = samplerNode.CurrentPropertyReference;
-							samplerToUse = GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, property );
+							samplerToUse = GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, property, varMode );
 						}
 						else
 						{
@@ -1141,7 +1141,7 @@ namespace AmplifyShaderEditor
 					}
 					else
 					{
-						samplerToUse = GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, propertyName );
+						samplerToUse = GeneratorUtils.GenerateSamplerState( ref dataCollector, UniqueId, propertyName , varMode );
 					}
 				}
 
@@ -1199,6 +1199,7 @@ namespace AmplifyShaderEditor
 		{
 			m_precisionString = UIUtils.PrecisionWirePortToCgType( CurrentPrecisionType, m_colorPort.DataType );
 			string propertyName = CurrentPropertyReference;
+			VariableMode varMode = VarModeReference;
 			if( !string.IsNullOrEmpty( portProperty ) && portProperty != "0.0" )
 			{
 				propertyName = portProperty;
@@ -1216,7 +1217,7 @@ namespace AmplifyShaderEditor
 					currMipMode = MipType.MipLevel;
 				}
 
-				string samplerValue = SampleTexture( ref dataCollector, ignoreLocalVar, portProperty, currMipMode, propertyName );
+				string samplerValue = SampleTexture( ref dataCollector, ignoreLocalVar, portProperty, currMipMode, propertyName , varMode );
 
 				AddNormalMapTag( ref dataCollector, ref samplerValue );
 				return samplerValue;
@@ -1359,7 +1360,7 @@ namespace AmplifyShaderEditor
 				//mipType = "lod";
 			}
 
-			string samplerOp = SampleTexture( ref dataCollector, ignoreLocalVar, portProperty, currMipMode, propertyName );
+			string samplerOp = SampleTexture( ref dataCollector, ignoreLocalVar, portProperty, currMipMode, propertyName , varMode );
 
 			AddNormalMapTag( ref dataCollector, ref samplerOp );
 
@@ -1377,7 +1378,7 @@ namespace AmplifyShaderEditor
 						if( dataCollector.PortCategory == MasterNodePortCategory.Vertex || dataCollector.PortCategory == MasterNodePortCategory.Tessellation )
 							dataCollector.AddToVertexLocalVariables( UniqueId, m_precisionString + " " + textureFetchedValue + " = " + samplerOp + ";" );
 						else
-							dataCollector.AddToLocalVariables( UniqueId, m_precisionString + " " + textureFetchedValue + " = " + samplerOp + ";" );
+							dataCollector.AddToFragmentLocalVariables( UniqueId, m_precisionString + " " + textureFetchedValue + " = " + samplerOp + ";" );
 
 
 						m_colorPort.SetLocalValue( textureFetchedValue, dataCollector.PortCategory );
@@ -1423,7 +1424,7 @@ namespace AmplifyShaderEditor
 
 				int coordSet = ( ( m_textureCoordSet < 0 ) ? 0 : m_textureCoordSet );
 				string uvName = IOUtils.GetUVChannelName( propertyName, coordSet );
-				string dummyPropUV = "_tex" + ( coordSize != 2 ? "" + coordSize : "" ) + "coord" + ( coordSet > 0 ? ( coordSet + 1 ).ToString() : "" );
+				string dummyPropUV = "_tex" /*+ ( coordSize != 2 ? "" + coordSize : "" )*/ + "coord" + ( coordSet > 0 ? ( coordSet + 1 ).ToString() : "" );
 				string dummyUV = "uv" + ( coordSet > 0 ? ( coordSet + 1 ).ToString() : "" ) + dummyPropUV;
 
 				string attr = GetPropertyValue();
@@ -1459,7 +1460,7 @@ namespace AmplifyShaderEditor
 				string coordInput = string.Empty;
 				if( !dataCollector.IsTemplate && coordSet > 3 )
 				{
-					coordInput = GeneratorUtils.GenerateAutoUVs( ref dataCollector, UniqueId, coordSet, null, WirePortDataType.FLOAT2 );
+					coordInput = GeneratorUtils.GenerateAutoUVs( ref dataCollector, UniqueId, coordSet, null, m_uvPort.DataType );
 				}
 				else
 				{
@@ -1473,7 +1474,7 @@ namespace AmplifyShaderEditor
 					else
 					{
 						coordInput = Constants.InputVarStr + "." + dummyUV;
-						dataCollector.AddToInput( UniqueId, dummyUV, m_uvPort.DataType );
+						dataCollector.AddToInput( UniqueId, dummyUV, dataCollector.GetMaxTextureChannelSize( coordSet ));
 					}
 				}
 
@@ -1500,7 +1501,10 @@ namespace AmplifyShaderEditor
 					dataCollector.UsingHigherSizeTexcoords = true;
 					dataCollector.AddLocalVariable( UniqueId, "float" + coordSize + " " + uvName + " = " + coordInput + ";" );
 					if( scaleOffset )
-						dataCollector.AddLocalVariable( UniqueId, uvName + ".xy = " + coordInput + ".xy * " + texCoordsST + ".xy + " + texCoordsST + ".zw;" );
+					{
+						string scaleOffsetValue = GeneratorUtils.GenerateScaleOffsettedUV( m_currentType , coordInput+".xy" , texCoordsST, false );
+						dataCollector.AddLocalVariable( UniqueId , uvName + ".xy = " + scaleOffsetValue+";" );
+					}
 				}
 				else
 				{
@@ -1508,9 +1512,12 @@ namespace AmplifyShaderEditor
 						uvName += coordSize;
 
 					if( scaleOffset )
-						dataCollector.AddLocalVariable( UniqueId, PrecisionType.Float, m_uvPort.DataType, uvName, coordInput + " * " + texCoordsST + ".xy + " + texCoordsST + ".zw" );
+					{
+						string scaleOffsetValue = GeneratorUtils.GenerateScaleOffsettedUV( m_currentType , coordInput , texCoordsST, false );
+						dataCollector.AddLocalVariable( UniqueId , PrecisionType.Float , m_uvPort.DataType , uvName , scaleOffsetValue );
+					}
 					else
-						dataCollector.AddLocalVariable( UniqueId, PrecisionType.Float, m_uvPort.DataType, uvName, coordInput );
+						dataCollector.AddLocalVariable( UniqueId , PrecisionType.Float , m_uvPort.DataType , uvName , coordInput );
 				}
 
 				uvs = uvName;
@@ -1615,7 +1622,7 @@ namespace AmplifyShaderEditor
 					else
 					{
 						dataCollector.AddToUniforms( UniqueId, "uniform float4 " + propertyName + "_ST;" );
-						dataCollector.AddLocalVariable( UniqueId, PrecisionType.Float, WirePortDataType.FLOAT2, uvChannelName, uvName + " * " + propertyName + "_ST.xy + " + propertyName + "_ST.zw" );
+						dataCollector.AddLocalVariable( UniqueId , PrecisionType.Float , WirePortDataType.FLOAT2 , uvChannelName , GeneratorUtils.GenerateScaleOffsettedUV( m_currentType , uvName , propertyName,true ) );
 					}
 					uvCoord = uvChannelName;
 				}
@@ -1653,7 +1660,8 @@ namespace AmplifyShaderEditor
 						else
 						{
 							dataCollector.AddToUniforms( UniqueId, "uniform float4 " + propertyName + "_ST;" );
-							dataCollector.AddToLocalVariables( UniqueId, PrecisionType.Float, WirePortDataType.FLOAT2, uvChannelName, Constants.InputVarStr + "." + dummyUV + " * " + propertyName + "_ST.xy + " + propertyName + "_ST.zw" );
+							string offsettedUV = GeneratorUtils.GenerateScaleOffsettedUV( m_currentType , dummyUV , propertyName,true );
+							dataCollector.AddToLocalVariables( UniqueId, PrecisionType.Float, WirePortDataType.FLOAT2, uvChannelName, Constants.InputVarStr + "." + offsettedUV );
 						}
 						uvCoord = uvChannelName;
 					}
@@ -1680,7 +1688,7 @@ namespace AmplifyShaderEditor
 				}
 
 				string scaleValue = isScaledNormal ? m_normalPort.GeneratePortInstructions( ref dataCollector ) : "1.0f";
-				value = GeneratorUtils.GenerateUnpackNormalStr( ref dataCollector, CurrentPrecisionType, UniqueId, OutputId, value, isScaledNormal, scaleValue );
+				value = GeneratorUtils.GenerateUnpackNormalStr( ref dataCollector, CurrentPrecisionType, UniqueId, OutputId, value, isScaledNormal, scaleValue, UnpackInputMode.Tangent );
 
 				if( isScaledNormal )
 				{
@@ -2211,6 +2219,28 @@ namespace AmplifyShaderEditor
 			}
 		}
 
+		public VariableMode VarModeReference
+		{
+			get
+			{
+				VariableMode mode;
+				if( m_referenceType == TexReferenceType.Instance && m_referenceArrayId > -1 )
+				{
+					SamplerNode node = ContainerGraph.SamplerNodes.GetNode( m_referenceArrayId );
+					mode = ( node != null ) ? node.CurrentVariableMode : m_variableMode;
+				}
+				else if( m_texPort.IsConnected && ( m_texPort.GetOutputNodeWhichIsNotRelay( 0 ) as TexturePropertyNode ) != null )
+				{
+					mode = TextureProperty.CurrentVariableMode;
+				}
+				else
+				{
+					mode = m_variableMode;
+				}
+				return mode;
+			}
+		}
+
 		public bool SoftValidReference
 		{
 			get
@@ -2288,11 +2318,17 @@ namespace AmplifyShaderEditor
 			if( dataCollector.IsTemplate )
 			{
 				if( !m_texPort.IsConnected )
-					dataCollector.TemplateDataCollectorInstance.SetUVUsage( m_textureCoordSet, m_uvPort.DataType );
+					dataCollector.TemplateDataCollectorInstance.SetUVUsage( m_textureCoordSet , m_uvPort.DataType );
 			}
-			else if( m_textureCoordSet > 3 )
+			else
 			{
-				dataCollector.AddCustomAppData( string.Format( TemplateHelperFunctions.TexUVFullSemantic, m_textureCoordSet ) );
+				if( !m_uvPort.IsConnected )
+					dataCollector.SetTextureChannelSize( m_textureCoordSet , m_uvPort.DataType );
+
+				if( m_textureCoordSet > 3 )
+				{
+					dataCollector.AddCustomAppData( string.Format( TemplateHelperFunctions.TexUVFullSemantic , m_textureCoordSet ) );
+				}
 			}
 		}
 
