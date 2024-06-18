@@ -145,7 +145,7 @@ MonoBehaviour:
       m_Columns: []
       m_VisibleColumns: 
       m_SortedColumns: 
-    splitterState: '{"ID":8492,"splitterInitialOffset":0.0,"currentActiveSplitter":-1,"realSizes":[296.0,148.0],"relativeSizes":[0.6666666865348816,0.3333333134651184],"minSizes":[90.0,47.0],"maxSizes":[0.0,0.0],"lastTotalSize":444.0,"splitSize":6.0,"xOffset":0.0,"m_Version":1,"oldRealSizes":[],"oldMinSizes":[],"oldMaxSizes":[],"oldSplitSize":0}'
+    splitterState: '{"ID":-1,"splitterInitialOffset":0.0,"currentActiveSplitter":-1,"realSizes":[296.0,148.0],"relativeSizes":[0.6666666865348816,0.3333333134651184],"minSizes":[90.0,47.0],"maxSizes":[0.0,0.0],"lastTotalSize":444.0,"splitSize":6.0,"xOffset":0.0,"m_Version":1,"oldRealSizes":[],"oldMinSizes":[],"oldMaxSizes":[],"oldSplitSize":0}'
     selectedTab: 0
   projectCleanerSettings:
     filtersTabIndex: 0
