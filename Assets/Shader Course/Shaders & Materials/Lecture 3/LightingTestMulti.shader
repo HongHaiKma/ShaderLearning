@@ -1,5 +1,7 @@
-﻿Shader "Unlit/LightingTestMulti" {
-    Properties {
+﻿Shader "Unlit/LightingTestMulti"
+{
+    Properties
+    {
         _RockAlbedo ("Rock Albedo", 2D) = "white" {}
         [NoScaleOffset] _RockNormals ("Rock Normals", 2D) = "bump" {}
         [NoScaleOffset] _RockHeight ("Rock Height", 2D) = "gray" {}
@@ -12,31 +14,33 @@
         _NormalIntensity ("Normal Intensity", Range(0,1)) = 1
         _DispStrength ("Displacement Strength", Range(0,0.2)) = 0
     }
-    SubShader {
-        Tags { "RenderType"="Opaque" "Queue"="Geometry" }
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" "Queue"="Geometry" "RenderPipeline" = "UniversalRenderPipeline"}
 
         // Base pass
         Pass {
-            Tags { "LightMode" = "ForwardBase" }
-            CGPROGRAM
+            // Tags { "LightMode" = "ForwardRenderer" }
+            Tags { "LightMode" = "UniversalForward" }
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #define IS_IN_BASE_PASS
+            // #define IS_IN_BASE_PASS
             #include "FGLighting.cginc"
-            ENDCG
+            ENDHLSL
         }
         
         // Add pass
-        Pass {
-            Tags { "LightMode" = "ForwardAdd" }
-            Blend One One // src*1 + dst*1
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_fwdadd
-            #include "FGLighting.cginc"
-            ENDCG
-        }
+        // Pass {
+        //     Tags { "LightMode" = "ForwardAdd" }
+        //     Blend One One // src*1 + dst*1
+        //     CGPROGRAM
+        //     #pragma vertex vert
+        //     #pragma fragment frag
+        //     #pragma multi_compile_fwdadd
+        //     #include "FGLighting.cginc"
+        //     ENDCG
+        // }
         
         
     }

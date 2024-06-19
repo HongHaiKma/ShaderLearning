@@ -2,6 +2,10 @@
 #include "Lighting.cginc"
 #include "AutoLight.cginc"
 
+// #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+// #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+// #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
 #define USE_LIGHTING
 #define TAU 6.28318530718
 
