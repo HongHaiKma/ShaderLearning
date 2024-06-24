@@ -40,19 +40,22 @@ float _NormalIntensity;
 float _DispStrength;
 float _SpecIBLIntensity;
 
-float2 Rotate( float2 v, float angRad ) {
+float2 Rotate( float2 v, float angRad )
+{
     float ca = cos( angRad );
     float sa = sin( angRad );
     return float2( ca * v.x - sa * v.y, sa * v.x + ca * v.y );
 }
 
-float2 DirToRectilinear( float3 dir ) {
+float2 DirToRectilinear( float3 dir )
+{
     float x = atan2( dir.z, dir.x ) / TAU + 0.5; // 0-1
     float y = dir.y * 0.5 + 0.5; // 0-1
     return float2(x,y);
 }
 
-Interpolators vert (MeshData v) {
+Interpolators vert (MeshData v)
+{
     Interpolators o;
     o.uv = TRANSFORM_TEX(v.uv, _RockAlbedo);
 
@@ -62,28 +65,29 @@ Interpolators vert (MeshData v) {
 
     o.localPos = v.vertex.xyz;
     o.vertex = UnityObjectToClipPos(v.vertex);
-    
+
     o.normal = UnityObjectToWorldNormal( v.normal );
     o.tangent = UnityObjectToWorldDir( v.tangent.xyz );
     o.bitangent = cross( o.normal, o.tangent );
     o.bitangent *= v.tangent.w * unity_WorldTransformParams.w; // correctly handle flipping/mirroring
-    
+
     o.wPos = mul( unity_ObjectToWorld, v.vertex );
     TRANSFER_VERTEX_TO_FRAGMENT(o); // lighting, actually
     return o;
 }
 
-float4 frag (Interpolators i) : SV_Target {
+float4 frag (Interpolators i) : SV_Target
+{
 
 
     float3 V = normalize( _WorldSpaceCameraPos - i.wPos );
 
     float3 rock = tex2D( _RockAlbedo, i.uv ).rgb;
     float3 surfaceColor = rock * _Color.rgb;
-    
+
     float3 tangentSpaceNormal = UnpackNormal( tex2D( _RockNormals, i.uv ) );
     tangentSpaceNormal = normalize( lerp( float3(0,0,1), tangentSpaceNormal, _NormalIntensity ) );
-    
+
     float3x3 mtxTangToWorld = {
         i.tangent.x, i.bitangent.x, i.normal.x,
         i.tangent.y, i.bitangent.y, i.normal.y,
@@ -95,7 +99,7 @@ float4 frag (Interpolators i) : SV_Target {
     #ifdef USE_LIGHTING
         // diffuse lighting
         //float3 N = normalize(i.normal);
- 
+
         float3 L = normalize( UnityWorldSpaceLightDir( i.wPos ) );
         float attenuation = LIGHT_ATTENUATION(i);
         float3 lambert = saturate( dot( N, L ) );
@@ -107,7 +111,7 @@ float4 frag (Interpolators i) : SV_Target {
         #endif
 
         // specular lighting
-        
+
         float3 H = normalize(L + V);
         //float3 R = reflect( -L, N ); // uses for Phong
         float3 specularLight = saturate(dot(H, N)) * (lambert > 0); // Blinn-Phong
@@ -115,7 +119,7 @@ float4 frag (Interpolators i) : SV_Target {
         float specularExponent = exp2( _Gloss * 11 ) + 2;
         specularLight = pow( specularLight, specularExponent ) * _Gloss * attenuation; // specular exponent
         specularLight *= _LightColor0.xyz;
-    
+
         #ifdef IS_IN_BASE_PASS
             float fresnel = pow(1-saturate(dot(V,N)),5);
             float3 viewRefl = reflect( -V, N );
@@ -123,7 +127,6 @@ float4 frag (Interpolators i) : SV_Target {
             float3 specularIBL = tex2Dlod( _SpecularIBL, float4(DirToRectilinear( viewRefl ),mip,mip) ).xyz;
             specularLight += specularIBL * _SpecIBLIntensity * fresnel;
         #endif
-    
 
         return float4( diffuseLight * surfaceColor + specularLight, 1 );
     #else
@@ -133,5 +136,4 @@ float4 frag (Interpolators i) : SV_Target {
             return 0;
         #endif
     #endif
-    
 }

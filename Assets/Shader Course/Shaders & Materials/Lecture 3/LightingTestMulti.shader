@@ -19,29 +19,32 @@
         Tags { "RenderType"="Opaque" "Queue"="Geometry" "RenderPipeline" = "UniversalRenderPipeline"}
 
         // Base pass
-        Pass {
+        Pass
+        {
+            // Tags { "LightMode" = "ForwardBase" }
             // Tags { "LightMode" = "ForwardRenderer" }
             Tags { "LightMode" = "UniversalForward" }
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            // #define IS_IN_BASE_PASS
+            #define IS_IN_BASE_PASS
             #include "FGLighting.cginc"
             ENDHLSL
         }
-        
+
         // Add pass
-        // Pass {
-        //     Tags { "LightMode" = "ForwardAdd" }
-        //     Blend One One // src*1 + dst*1
-        //     CGPROGRAM
-        //     #pragma vertex vert
-        //     #pragma fragment frag
-        //     #pragma multi_compile_fwdadd
-        //     #include "FGLighting.cginc"
-        //     ENDCG
-        // }
-        
-        
+        Pass
+        {
+            // Tags { "LightMode" = "ForwardRenderer" }
+            // Tags { "LightMode" = "UniversalForward" }
+            Tags { "LightMode" = "UniversalForwardAdd" }
+            Blend One One // src*1 + dst*1
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fwdadd
+            #include "FGLighting.cginc"
+            ENDHLSL
+        }
     }
 }
