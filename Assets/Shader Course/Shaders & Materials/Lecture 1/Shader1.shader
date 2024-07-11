@@ -20,39 +20,48 @@ Shader "Unlit/Shader1"
 
             #include "UnityCG.cginc"
 
+            //automatically filled by unity
             struct MeshData //per-vertex mesh data
             {
                 float4 vertex : POSITION; //vertex position
                 float3 normals : NORMAL;
-                float2 uv : TEXCOORD0; // uv coordinate
+                float4 uv0 : TEXCOORD0; // uv diffuse/normal coordinate texture
+                float4 uv1 : TEXCOORD1; // uv lightmap coordinate texture
             };
 
-            struct v2f
+            struct Interpolators
             {
-                float4 vertex : SV_POSITION;
-                float2 uv : TEXCOORD0;
-                UNITY_FOG_COORDS(1)
+                float4 vertex : SV_POSITION;  // clip space position
+                float2 uv0 : TEXCOORD;
             };
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
 
-            v2f vert (MeshData v)
+            Interpolators vert (MeshData v)
             {
-                v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                UNITY_TRANSFER_FOG(o,o.vertex);
+                Interpolators o;
+                o.vertex = UnityObjectToClipPos(v.vertex); //local space to clip space
+                o.uv0 = TRANSFORM_TEX(v.uv0, _MainTex);
+                // UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            // bool 0 to 1
+            // int
+            // float (32 bit float)
+            // half (16 bit float)
+            // fixed (lower precision) -1 to 1
+            // float4 -> half4 -> fixed4
+            // float4x4 -> half4x4 (C#: Matrix4x4)
+
+            float4 frag (Interpolators i) : SV_Target
             {
-                // sample the texture
-                fixed4 col = tex2D(_MainTex, i.uv);
-                // apply fog
-                UNITY_APPLY_FOG(i.fogCoord, col);
-                return col;
+                float4 myValue;
+
+                float2 otherValue = myValue.gr;
+                
+                return float4(1, 0, 0, 1);
             }
             ENDCG
         }
